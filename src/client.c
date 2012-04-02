@@ -8,6 +8,15 @@
 
 #include <wordexp.h>
 
+/*
+ * Autores:
+ *
+ * Barata Gonzalez, Jorge
+ * Galan Galiano, Cristian
+ *
+ * */
+
+
 
 int debug = 0;
 
@@ -20,8 +29,8 @@ void usage(char *program_name) {
 void f_ping(){
 	if (debug)
 		printf("PING\n");
-	
 	// Write code here
+
 }
 
 void f_swap(char *src, char *dst){
