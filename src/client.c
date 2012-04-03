@@ -35,10 +35,14 @@ void f_ping(){
 
 	// Write code here
 	servicio = 1;
+	double ini = gettimeofday();
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de ping");
 	}
+
+	double end = gettimeofday();
+	fprintf(stderr,"%d s\n", (end - ini)/2);
 }
 
 void f_swap(char *src, char *dst){
@@ -212,8 +216,11 @@ int main(int argc, char *argv[]){
 
 	if(connect(serverConnected, (struct sockaddr *) &serverIn, sizeof(serverIn)) <0){
 		perror("Error al conectar");
+		exit(-1);
 	}else
 		shell();
+
+	close(serverConnected);
 
 	exit(EXIT_SUCCESS);
 }

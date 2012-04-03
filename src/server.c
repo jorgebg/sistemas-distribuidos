@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
 		clientConnected = accept(socket, (struct sockaddr *) &client, &size);
 		if(clientConnected < 0){
 			perror("Error al aceptar las peticiones");
+			exit(-1);
 		}
 
 		ipClient = inet_ntoa(client.sin_addr);
@@ -192,8 +193,10 @@ int main(int argc, char *argv[]) {
 
 		if(pthread_create(&child, NULL, (void *)crearPeticion, &clientConnected) < 0){
 			perror("Error al crear el hilo");
+			exit(-1);
 		}
 
+		close(clientConnected);
 	}
 
 	//Cierra el socket
