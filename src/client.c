@@ -8,6 +8,9 @@
 
 #include <wordexp.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 /*
  * Autores:
  *
@@ -17,9 +20,9 @@
  * */
 
 
-
 int debug = 0;
-
+int serverConnected;
+int servicio;
 
 void usage(char *program_name) {
 	printf("Usage: %s [-d] -s <server> -p <port>\n", program_name);
@@ -29,8 +32,13 @@ void usage(char *program_name) {
 void f_ping(){
 	if (debug)
 		printf("PING\n");
-	// Write code here
 
+	// Write code here
+	servicio = 1;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de ping");
+	}
 }
 
 void f_swap(char *src, char *dst){
@@ -38,6 +46,11 @@ void f_swap(char *src, char *dst){
 		printf("SWAP <SRC=%s> <DST=%s>\n", src, dst);
 	
 	// Write code here
+	servicio = 2;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de swap");
+	}
 }
 
 void f_hash(char *src){
@@ -45,6 +58,11 @@ void f_hash(char *src){
 		printf("HASH <SRC=%s>\n", src);
 	
 	// Write code here
+	servicio = 3;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de hash");
+	}
 }
 
 void f_check(char *src, int hash){
@@ -52,6 +70,11 @@ void f_check(char *src, int hash){
 		printf("CHECK <SRC=%s> <HASH=%d>\n", src, hash);
 	
 	// Write code here
+	servicio = 4;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de check");
+	}
 }
 
 void f_stat(){
@@ -59,6 +82,11 @@ void f_stat(){
 		printf("STAT\n");
 	
 	// Write code here
+	servicio = 5;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de stat");
+	}
 }
 
 void quit(){
@@ -166,10 +194,27 @@ int main(int argc, char *argv[]){
 	if (debug)
 		printf("SERVER: %s PORT: %d\n",server, port);
 	
-	// Write code here
-	
-	shell();
-	
+	/*
+	 *  EMPIEZA EL CODIGO PROPIO
+	 *  NO SE SI HAY QUE USAR STDERR O STDOUT. Realmente no piden salida, se puede usar printf.
+	 **/
+
+	struct sockaddr_in serverIn;
+	serverConnected = socket(AF_INET, SOCK_STREAM, 0);
+
+	if(serverConnected < 0){
+		perror("Error creando socket");
+	}
+
+	serverIn.sin_family = AF_INET;
+	serverIn.sin_port = htons(port);
+	serverIn.sin_addr.s_addr = INADDR_ANY;
+
+	if(connect(serverConnected, (struct sockaddr *) &serverIn, sizeof(serverIn)) <0){
+		perror("Error al conectar");
+	}else
+		shell();
+
 	exit(EXIT_SUCCESS);
 }
 

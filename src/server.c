@@ -14,7 +14,7 @@
 #include <ifaddrs.h>
 #include <errno.h>
 #include <netdb.h>
-
+#include <pthread.h>
 
 /*
  * Autores:
@@ -23,6 +23,15 @@
  * Galan Galiano, Cristian
  *
  * */
+
+char* obtenerIpLocal();
+int crearConexion(int port);
+int crearPeticion(int *sock);
+void f_ping();
+void f_swap();
+void f_hash();
+void f_check();
+void f_stat();
 
 /**
  * Atributos Globales:
@@ -41,7 +50,7 @@ char* obtenerIpLocal() {
 
 }
 
-void crearConexion(int port){
+int crearConexion(int port){
 	struct sockaddr_in server;
 	int descriptorSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if(descriptorSocket < 0){
@@ -59,7 +68,57 @@ void crearConexion(int port){
 	if(listen(descriptorSocket, 10) < 0){
 		perror("Error haciendo listen");
 	}
+
+	return descriptorSocket;
 }
+
+int crearPeticion(int *client){
+	int clientConnected = *client, servicio;
+
+	if(read(clientConnected, &servicio, sizeof(int)) < 1){
+		perror("Error recibiendo el servicio");
+	}
+
+	//Eleccion de servicio
+	if(servicio == 1){
+		f_ping();
+	}else if(servicio == 2){
+		f_swap();
+	}else if(servicio == 3){
+		f_hash();
+	}else if(servicio == 4){
+		f_check();
+	}else if(servicio == 5){
+		f_stat();
+	}
+	return 1;
+}
+
+void f_ping(){
+	// Write code here
+	fprintf(stderr, "s> ping\n");
+}
+
+void f_swap(){
+	// Write code here
+	fprintf(stderr, "s> swap\n");
+}
+
+void f_hash(){
+	// Write code here
+	fprintf(stderr, "s> hash\n");
+}
+
+void f_check(){
+	// Write code here
+	fprintf(stderr, "s> check\n");
+}
+
+void f_stat(){
+	// Write code here
+	fprintf(stderr, "s> stat\n");
+}
+
 
 void usage(char *program_name) {
 	printf("Usage: %s [-d] -p <port>\n", program_name);
@@ -108,16 +167,39 @@ int main(int argc, char *argv[]) {
 	 **/
 
 	//Crear configuracion inicial
-	char* ip;
-	ip = obtenerIpLocal();
-	crearConexion(atoi(argv[2]));
+	char* ip = obtenerIpLocal();
+	int size, socket = crearConexion(atoi(argv[2]));
 	fprintf(stderr, "s> init server %s %s \n", ip, argv[2]);
 
 	//Crear concurrencia
-	fprintf(stderr, "s> waiting\n");
+	struct sockaddr_in client;
+	int clientConnected;
+	char* ipClient;
 
 	while (1) {
-		// Write code here
+		pthread_t child;
+		fprintf(stderr, "s> waiting\n");
+		size = sizeof(client);
+
+		//Ha llegado un cliente
+		clientConnected = accept(socket, (struct sockaddr *) &client, &size);
+		if(clientConnected < 0){
+			perror("Error al aceptar las peticiones");
+		}
+
+		ipClient = inet_ntoa(client.sin_addr);
+		fprintf(stderr, "s> accept %s:\n", ipClient);
+
+		if(pthread_create(&child, NULL, (void *)crearPeticion, &clientConnected) < 0){
+			perror("Error al crear el hilo");
+		}
+
 	}
+
+	//Cierra el socket
+	close(socket);
+
+	//Termina el main
+	exit(1);
 
 }
