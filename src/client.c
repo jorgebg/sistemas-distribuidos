@@ -67,30 +67,26 @@ void f_swap(char *src, char *dst){
 	}
 
 	//Obtiene los datos del fichero
-    FILE *archivo;
-    char caracteres[10];
-
-    archivo = fopen(src,"r");
+    FILE *archivo = fopen(src,"r");
     if(archivo == NULL)
 		exit(1);
 
+    char caracteres[10];
     int total = 0;
-    printf("\nEl contenido del archivo de prueba es \n\n");
     char* copia = calloc(total, sizeof(char));
     char* resultado;
+
     while (fgets(caracteres,10,archivo) != NULL)
     {
     	total = total + 10;
 		resultado = calloc(total, sizeof(char));
-
-		printf("%s \n",caracteres);
 
 		strcpy(resultado, copia);
 		strcat(resultado, caracteres);
 		copia = calloc(total, sizeof(char));
 		strcpy(copia, resultado);
     }
-	printf("%s \n",copia);
+
 	free(resultado);
     fclose(archivo);
 
@@ -111,14 +107,25 @@ void f_swap(char *src, char *dst){
 	if(read(serverConnected, &letrasCambiadas, sizeof(int)) < 0){
 		perror("No se puede recibir el servicio de swap");
 	}
-	printf("%i \n",letrasCambiadas);
 
 	//Recibe la nueva cadena
 	if(read(serverConnected, copia, longitud) < 0){
 		perror("No se puede recibir el servicio de swap");
 	}
-	printf("%s \n",copia);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "%i\n", letrasCambiadas);
+
+	//Graba los datos en un fichero
+    FILE *archivo2 = fopen(dst,"a+");
+    if(archivo2 == NULL)
+		exit(1);
+
+    fputs(copia, archivo2);
+
+    fclose(archivo2);
 	free(copia);
+
 }
 
 void f_hash(char *src){
@@ -141,22 +148,20 @@ void f_hash(char *src){
 		exit(1);
 
     int total = 0;
-    printf("\nEl contenido del archivo de prueba es \n\n");
     char* copia = calloc(total, sizeof(char));
     char* resultado;
+
     while (fgets(caracteres,10,archivo) != NULL)
     {
     	total = total + 10;
 		resultado = calloc(total, sizeof(char));
-
-		printf("%s \n",caracteres);
 
 		strcpy(resultado, copia);
 		strcat(resultado, caracteres);
 		copia = calloc(total, sizeof(char));
 		strcpy(copia, resultado);
     }
-	printf("%s \n",copia);
+
 	free(resultado);
     fclose(archivo);
 
@@ -173,11 +178,13 @@ void f_hash(char *src){
 	}
 
 	//Recibe el valor de hash
-	unsigned int hash;
+	unsigned int hash = 0;
 	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de hash");
 	}
-	printf("%u \n", hash);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "%u\n", hash);
 
 	free(copia);
 }
@@ -202,22 +209,20 @@ void f_check(char *src, int hash){
 		exit(1);
 
     int total = 0;
-    printf("\nEl contenido del archivo de prueba es \n\n");
     char* copia = calloc(total, sizeof(char));
     char* resultado;
+
     while (fgets(caracteres,10,archivo) != NULL)
     {
     	total = total + 10;
 		resultado = calloc(total, sizeof(char));
-
-		printf("%s \n",caracteres);
 
 		strcpy(resultado, copia);
 		strcat(resultado, caracteres);
 		copia = calloc(total, sizeof(char));
 		strcpy(copia, resultado);
     }
-	printf("%s \n",copia);
+
 	free(resultado);
     fclose(archivo);
 
@@ -245,12 +250,13 @@ void f_check(char *src, int hash){
 		perror("No se puede recibir el servicio de check");
 	}
 
+	//Se imprime por pantalla
 	if(correcto == 0)
-		printf("FAIL \n");
+		fprintf(stderr, "FAIL\n");
 	else
-		printf("OK \n");
+		fprintf(stderr, "OK\n");
 
-
+	free(copia);
 }
 
 void f_stat(){
@@ -269,36 +275,45 @@ void f_stat(){
 	if(read(serverConnected, &ping, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de stat");
 	}
-	printf("ping %u \n", ping);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "ping %u \n", ping);
 
 	//Recibe el valor de swap
 	unsigned int swap;
 	if(read(serverConnected, &swap, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de stat");
 	}
-	printf("swap %u \n", swap);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "swap %u \n", swap);
 
 	//Recibe el valor de hash
 	unsigned int hash;
 	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de stat");
 	}
-	printf("hash %u \n", hash);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "hash %u \n", hash);
 
 	//Recibe el valor de check
 	unsigned int check;
 	if(read(serverConnected, &check, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de stat");
 	}
-	printf("check %u \n", check);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "check %u \n", check);
 
 	//Recibe el valor de stat
 	unsigned int stat;
 	if(read(serverConnected, &stat, sizeof(unsigned int)) < 0){
 		perror("No se puede recibir el servicio de stat");
 	}
-	printf("stat %u \n", stat);
 
+	//Se imprime por pantalla
+	fprintf(stderr, "stat %u \n", stat);
 }
 
 void quit(){
@@ -432,7 +447,7 @@ int main(int argc, char *argv[]){
 	serverIn.sin_addr.s_addr = INADDR_ANY;
 
 	if(connect(serverConnected, (struct sockaddr *) &serverIn, sizeof(serverIn)) <0){
-		perror("Error al conectar");
+		fprintf(stderr, "Error en la conexion con el servidor %s:%i", server, port);
 		exit(-1);
 	}else
 		shell();

@@ -24,14 +24,22 @@
  *
  * */
 
+typedef struct{
+	char* ip;
+	int port;
+	int descriptor;
+} conexion;
+
 char* obtenerIpLocal();
 int crearConexion(int port);
-int crearPeticion(int *sock);
+int crearPeticion(conexion *sock);
 void f_ping();
 void f_swap();
 void f_hash();
 void f_check();
 void f_stat();
+
+
 
 /**
  * Atributos Globales:
@@ -72,8 +80,10 @@ int crearConexion(int port){
 	return descriptorSocket;
 }
 
-int crearPeticion(int *client){
-	int clientConnected = *client, servicio;
+int crearPeticion(conexion *hijo){
+
+	int clientConnected = hijo->descriptor, port = hijo->port, servicio;
+	char* ip = hijo->ip;
 	unsigned int ping = 0, swap = 0, hash = 0, check = 0, stat = 0;
 
 	while(1){
@@ -86,17 +96,21 @@ int crearPeticion(int *client){
 		if(servicio == 1){
 			f_ping(clientConnected);
 			ping++;
+			//Se imprime por pantalla
+			fprintf(stderr, "s> %s:%i ping\n", ip, port);
 		}else if(servicio == 2){
-			f_swap(clientConnected);
+			f_swap(clientConnected, ip, port);
 			swap++;
 		}else if(servicio == 3){
-			f_hash(clientConnected);
+			f_hash(clientConnected, ip, port);
 			hash++;
 		}else if(servicio == 4){
-			f_check(clientConnected);
+			f_check(clientConnected, ip, port);
 			check++;
 		}else if(servicio == 5){
+			fprintf(stderr, "s> %s:%i init stat\n", ip, port);
 			f_stat(clientConnected, ping, swap, hash, check, stat);
+			fprintf(stderr, "s> %s:%i stat = %u %u %u %u %u\n", ip, port, ping, swap, hash, check, stat);
 			stat++;
 		}else if(servicio == 6){
 			return 1;
@@ -105,32 +119,27 @@ int crearPeticion(int *client){
 }
 
 void f_ping(int clientConnected){
-	// Write code here
-	fprintf(stderr, "s> ping\n");
-
 	char ack;
 	if(write(clientConnected, &ack, sizeof(char)) <0 ){
 		perror("No se puede enviar el servicio de ping");
 	}
 }
 
-void f_swap(int clientConnected){
-	// Write code here
-	fprintf(stderr, "s> swap\n");
-
+void f_swap(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
 	int longitud;
 	if(read(clientConnected, &longitud, sizeof(int)) < 0){
 		perror("No se puede recibir el servicio de swap");
 	}
-	printf("%i \n",longitud);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "%s:%i init swap %i\n", ip, port, longitud);
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
 	if(read(clientConnected, copia, longitud) < 0){
 		perror("No se puede recibir el servicio de swap");
 	}
-	printf("%s \n",copia);
 
 	//Intercambia los valores de la cadena
 	int i=0;
@@ -144,39 +153,38 @@ void f_swap(int clientConnected){
 			letrasCambiadas++;
 		}
 	}
-	printf("%s \n",copia);
 
 	//Envia la cantidad de letras cambiadas
 	if(write(clientConnected, &letrasCambiadas, sizeof(int)) < 0){
 		perror("No se puede enviar el servicio de swap");
 	}
-	printf(" : swap = %i \n",letrasCambiadas);
 
 	//Envia la nueva copia
 	if(write(clientConnected, copia, longitud) < 0){
 		perror("No se puede enviar el servicio de swap");
 	}
 
+	//Se imprime por pantalla
+	fprintf(stderr, "s> %s:%i swap = %i\n", ip, port, letrasCambiadas);
+
 	free(copia);
 }
 
-void f_hash(int clientConnected){
-	// Write code here
-	fprintf(stderr, "s> hash\n");
-
+void f_hash(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
 	int longitud;
 	if(read(clientConnected, &longitud, sizeof(int)) < 0){
 		perror("No se puede recibir el servicio de hash");
 	}
-	printf("%i \n",longitud);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "%s> s:%i init hash %i\n", ip, port, longitud);
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
 	if(read(clientConnected, copia, longitud) < 0){
 		perror("No se puede recibir el servicio de hash");
 	}
-	printf("%s \n",copia);
 
 	//Obtiene la funcion hash
 	int i=0;
@@ -184,41 +192,39 @@ void f_hash(int clientConnected){
 	for(i=0; i< longitud; i++){
 		hash = (hash + copia[i]) % 1000000000;
 	}
-	printf("%s \n",copia);
 
 	//Envia el hash
 	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
 		perror("No se puede enviar el servicio de hash");
 	}
-	printf(" : hash = %u \n",hash);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "s> %s:%i hash = %u\n", ip, port, hash);
 
 	free(copia);
 }
 
-void f_check(int clientConnected){
-	// Write code here
-	fprintf(stderr, "s> check\n");
-
+void f_check(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
 	int longitud;
 	if(read(clientConnected, &longitud, sizeof(int)) < 0){
 		perror("No se puede recibir el servicio de check");
 	}
-	printf("%i \n",longitud);
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
 	if(read(clientConnected, copia, longitud) < 0){
 		perror("No se puede recibir el servicio de check");
 	}
-	printf("%s \n",copia);
 
 	//Recibe el valor hash
-	unsigned int hash;
+	unsigned int hash = 0;
 	if(read(clientConnected, &hash, sizeof(unsigned int)) < 0){
 		perror("No se puede enviar el servicio de check");
 	}
-	printf("%u \n",hash);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "%s> s:%i init check %i %u\n", ip, port, longitud, hash);
 
 	//Obtiene la funcion hash
 	int i=0;
@@ -226,28 +232,26 @@ void f_check(int clientConnected){
 	for(i=0; i< longitud; i++){
 		uhash = (uhash + copia[i]) % 1000000000;
 	}
-	printf("%s \n",copia);
 
 	//Comprueba si es correcta
 	int correcto = 0;
-	if(hash == uhash){
+	if(hash == uhash)
 		correcto = 1;
-		printf(": check = OK \n");
-	}else
-		printf(": check = FAIL \n");
 
 	if(write(clientConnected, &correcto, sizeof(int)) < 0){
 		perror("No se puede enviar el servicio de check");
 	}
 
+	//Se imprime por pantalla
+	if(correcto == 1)
+		fprintf(stderr, "%s> s:%i check = OK\n", ip, port);
+	else
+		fprintf(stderr, "%s> s:%i check = FAIL\n", ip, port);
 	free(copia);
 }
 
 void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned int hash,
 		unsigned int check, unsigned int stat){
-	// Write code here
-	fprintf(stderr, "s> stat\n");
-
 	//Envia ping
 	if(write(clientConnected, &ping, sizeof(unsigned int)) < 0){
 		perror("No se puede enviar el servicio de stat");
@@ -324,7 +328,7 @@ int main(int argc, char *argv[]) {
 	//Crear configuracion inicial
 	char* ip = obtenerIpLocal();
 	int size, socket = crearConexion(atoi(argv[2]));
-	fprintf(stderr, "s> init server %s %s \n", ip, argv[2]);
+	fprintf(stderr, "s> init server %s:%s \n", ip, argv[2]);
 
 	//Crear concurrencia
 	struct sockaddr_in client;
@@ -347,7 +351,12 @@ int main(int argc, char *argv[]) {
 		port = ntohs(client.sin_port);
 		fprintf(stderr, "s> accept %s:%i\n", ipClient, port);
 
-		if(pthread_create(&child, NULL, (void *)crearPeticion, &clientConnected) < 0){
+		conexion hijo;
+		hijo.ip = ipClient;
+		hijo.port = port;
+		hijo.descriptor = clientConnected;
+
+		if(pthread_create(&child, NULL, (void *)crearPeticion, &hijo) < 0){
 			perror("Error al crear el hilo");
 			exit(-1);
 		}
