@@ -5,7 +5,7 @@ CC=gcc
 CPPFLAGS=-DDEBUG
 CFLAGS=-Wall -g -O0
 
-LDFLAGS=-lpthread
+LDFLAGS=-lpthread -lrt
 
 all: $(BINARIES)
 

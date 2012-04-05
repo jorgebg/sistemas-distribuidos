@@ -81,40 +81,86 @@ int crearPeticion(int *client){
 
 	//Eleccion de servicio
 	if(servicio == 1){
-		f_ping();
+		f_ping(clientConnected);
 	}else if(servicio == 2){
-		f_swap();
+		f_swap(clientConnected);
 	}else if(servicio == 3){
-		f_hash();
+		f_hash(clientConnected);
 	}else if(servicio == 4){
-		f_check();
+		f_check(clientConnected);
 	}else if(servicio == 5){
-		f_stat();
+		f_stat(clientConnected);
 	}
 	return 1;
 }
 
-void f_ping(){
+void f_ping(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> ping\n");
+
+	char ack;
+	if(write(clientConnected, &ack, sizeof(char)) <0 ){
+		perror("No se puede enviar el servicio de ping");
+	}
 }
 
-void f_swap(){
+void f_swap(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> swap\n");
+
+	//Recibe la longitud del texto
+	int longitud;
+	if(read(clientConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede recibir el servicio de swap");
+	}
+	printf("%i \n",longitud);
+
+	//Recibe la cadena
+	char* copia = calloc(longitud, sizeof(char));
+	if(read(clientConnected, copia, longitud) < 0){
+		perror("No se puede recibir el servicio de swap");
+	}
+	printf("%s \n",copia);
+
+	//Intercambia los valores de la cadena
+	int i=0;
+	int letrasCambiadas = 0;
+	for(i=0; i< longitud; i++){
+		if(copia[i] >= 'A' && copia[i] <= 'Z') {
+			copia[i] = copia[i] + 32;    /* resta a c el valor ascii de A */
+			letrasCambiadas++;
+		}else if(copia[i] >= 'a' && copia[i] <= 'z') {
+			copia[i] = copia[i] - 32;    /* resta a c el valor ascii de a */
+			letrasCambiadas++;
+		}
+	}
+	printf("%s \n",copia);
+
+	//Envia la cantidad de letras cambiadas
+	if(write(clientConnected, &letrasCambiadas, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de swap");
+	}
+	printf("%i \n",letrasCambiadas);
+
+	//Envia la nueva copia
+	if(write(clientConnected, copia, longitud) < 0){
+		perror("No se puede enviar el servicio de swap");
+	}
+
+	free(copia);
 }
 
-void f_hash(){
+void f_hash(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> hash\n");
 }
 
-void f_check(){
+void f_check(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> check\n");
 }
 
-void f_stat(){
+void f_stat(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> stat\n");
 }
@@ -182,7 +228,7 @@ int main(int argc, char *argv[]) {
 		size = sizeof(client);
 
 		//Ha llegado un cliente
-		clientConnected = accept(socket, (struct sockaddr *) &client, &size);
+		clientConnected = accept(socket, (struct sockaddr *) &client, (socklen_t *) &size);
 		if(clientConnected < 0){
 			perror("Error al aceptar las peticiones");
 			exit(-1);
@@ -196,8 +242,9 @@ int main(int argc, char *argv[]) {
 			exit(-1);
 		}
 
-		close(clientConnected);
+
 	}
+	close(clientConnected);
 
 	//Cierra el socket
 	close(socket);

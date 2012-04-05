@@ -8,9 +8,11 @@
 
 #include <wordexp.h>
 
+#include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
 /*
  * Autores:
  *
@@ -35,26 +37,88 @@ void f_ping(){
 
 	// Write code here
 	servicio = 1;
-	double ini = gettimeofday();
 
-	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+	struct timespec ini, end;
+
+	clock_gettime(CLOCK_REALTIME, &ini);
+
+	if(write(serverConnected, &servicio, sizeof(int)) < 0){
 		perror("No se puede enviar el servicio de ping");
 	}
+	char ack;
+	if(read(serverConnected, &ack, sizeof(char)) < 0){
+		perror("Error recibiendo el servicio");
+	}
+	clock_gettime( CLOCK_REALTIME, &end);
 
-	double end = gettimeofday();
-	fprintf(stderr,"%d s\n", (end - ini)/2);
+    fprintf(stderr, "%f s\n", (float)(1.0*(1.0*end.tv_nsec - ini.tv_nsec*1.0)*1e-9 + 1.0*end.tv_sec - 1.0*ini.tv_sec));
 }
 
 void f_swap(char *src, char *dst){
 	if (debug)
 		printf("SWAP <SRC=%s> <DST=%s>\n", src, dst);
-	
+
 	// Write code here
 	servicio = 2;
 
+    FILE *archivo;
+    char caracteres[10];
+	printf("SWAP <SRC=%s> <DST=%s>\n", src, dst);
+    archivo = fopen(src,"r");
+    if(archivo == NULL)
+		exit(1);
+
+    int total = 0;
+    printf("\nEl contenido del archivo de prueba es \n\n");
+    char* copia = calloc(total, sizeof(char));
+    char* resultado;
+    while (fgets(caracteres,10,archivo) != NULL)
+    {
+    	total = total + 10;
+		resultado = calloc(total, sizeof(char));
+
+		printf("%s \n",caracteres);
+
+		strcpy(resultado, copia);
+		strcat(resultado, caracteres);
+		copia = calloc(total, sizeof(char));
+		strcpy(copia, resultado);
+    }
+	printf("%s \n",copia);
+	free(resultado);
+    fclose(archivo);
+
+
+	//Le envia el tipo de servicio que es
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de swap");
 	}
+
+	//Le envia la longitud del texto
+	int longitud = strlen(copia);
+
+	if(write(serverConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de swap");
+	}
+
+	//Le envia un cadena
+	if(write(serverConnected, copia, longitud) < 0){
+		perror("No se puede enviar el servicio de swap");
+	}
+
+	//Recibe la cantidad de letras cambiadas
+	int letrasCambiadas;
+	if(read(serverConnected, &letrasCambiadas, sizeof(int)) < 0){
+		perror("No se puede recibir el servicio de swap");
+	}
+	printf("%i \n",letrasCambiadas);
+
+	//Recibe la nueva cadena
+	if(read(serverConnected, copia, longitud) < 0){
+		perror("No se puede recibir el servicio de swap");
+	}
+	printf("%s \n",copia);
+	free(copia);
 }
 
 void f_hash(char *src){
