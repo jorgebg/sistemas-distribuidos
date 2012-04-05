@@ -75,23 +75,28 @@ int crearConexion(int port){
 int crearPeticion(int *client){
 	int clientConnected = *client, servicio;
 
-	if(read(clientConnected, &servicio, sizeof(int)) < 1){
-		perror("Error recibiendo el servicio");
-	}
+	while(1){
 
-	//Eleccion de servicio
-	if(servicio == 1){
-		f_ping(clientConnected);
-	}else if(servicio == 2){
-		f_swap(clientConnected);
-	}else if(servicio == 3){
-		f_hash(clientConnected);
-	}else if(servicio == 4){
-		f_check(clientConnected);
-	}else if(servicio == 5){
-		f_stat(clientConnected);
+		//Recibe el numero de servicio
+		if(read(clientConnected, &servicio, sizeof(int)) < 1){
+			perror("Error recibiendo el servicio");
+		}
+
+		//Eleccion de servicio
+		if(servicio == 1){
+			f_ping(clientConnected);
+		}else if(servicio == 2){
+			f_swap(clientConnected);
+		}else if(servicio == 3){
+			f_hash(clientConnected);
+		}else if(servicio == 4){
+			f_check(clientConnected);
+		}else if(servicio == 5){
+			f_stat(clientConnected);
+		}else if(servicio == 6){
+			return 1;
+		}
 	}
-	return 1;
 }
 
 void f_ping(int clientConnected){
@@ -221,9 +226,9 @@ int main(int argc, char *argv[]) {
 	struct sockaddr_in client;
 	int clientConnected;
 	char* ipClient;
+	pthread_t child;
 
 	while (1) {
-		pthread_t child;
 		fprintf(stderr, "s> waiting\n");
 		size = sizeof(client);
 
@@ -235,7 +240,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		ipClient = inet_ntoa(client.sin_addr);
-		fprintf(stderr, "s> accept %s:\n", ipClient);
+		port = ntohs(client.sin_port);
+		fprintf(stderr, "s> accept %s:%i\n", ipClient, port);
 
 		if(pthread_create(&child, NULL, (void *)crearPeticion, &clientConnected) < 0){
 			perror("Error al crear el hilo");
@@ -244,6 +250,7 @@ int main(int argc, char *argv[]) {
 
 
 	}
+	//Cierra la conexion
 	close(clientConnected);
 
 	//Cierra el socket

@@ -158,6 +158,15 @@ void f_stat(){
 }
 
 void quit(){
+	if (debug)
+		printf("QUIT\n");
+
+	// Write code here
+	servicio = 6;
+
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de quit");
+	}
 }
 
 void shell() {
