@@ -76,7 +76,6 @@ int crearPeticion(int *client){
 	int clientConnected = *client, servicio;
 
 	while(1){
-
 		//Recibe el numero de servicio
 		if(read(clientConnected, &servicio, sizeof(int)) < 1){
 			perror("Error recibiendo el servicio");
@@ -158,11 +157,81 @@ void f_swap(int clientConnected){
 void f_hash(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> hash\n");
+
+	//Recibe la longitud del texto
+	int longitud;
+	if(read(clientConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede recibir el servicio de hash");
+	}
+	printf("%i \n",longitud);
+
+	//Recibe la cadena
+	char* copia = calloc(longitud, sizeof(char));
+	if(read(clientConnected, copia, longitud) < 0){
+		perror("No se puede recibir el servicio de hash");
+	}
+	printf("%s \n",copia);
+
+	//Obtiene la funcion hash
+	int i=0;
+	unsigned int hash = 0;
+	for(i=0; i< longitud; i++){
+		hash = (hash + copia[i]) % 1000000000;
+	}
+	printf("%s \n",copia);
+
+	//Envia el hash
+	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+	printf("%u \n",hash);
+
+	free(copia);
 }
 
 void f_check(int clientConnected){
 	// Write code here
 	fprintf(stderr, "s> check\n");
+
+	//Recibe la longitud del texto
+	int longitud;
+	if(read(clientConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede recibir el servicio de check");
+	}
+	printf("%i \n",longitud);
+
+	//Recibe la cadena
+	char* copia = calloc(longitud, sizeof(char));
+	if(read(clientConnected, copia, longitud) < 0){
+		perror("No se puede recibir el servicio de check");
+	}
+	printf("%s \n",copia);
+
+	//Recibe el valor hash
+	unsigned int hash;
+	if(read(clientConnected, &hash, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de check");
+	}
+	printf("%u \n",hash);
+
+	//Obtiene la funcion hash
+	int i=0;
+	unsigned int uhash = 0;
+	for(i=0; i< longitud; i++){
+		uhash = (uhash + copia[i]) % 1000000000;
+	}
+	printf("%s \n",copia);
+
+	//Comprueba si es correcta
+	int correcto = 0;
+	if(hash == uhash)
+		correcto = 1;
+
+	if(write(clientConnected, &correcto, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de check");
+	}
+	printf("%u \n",correcto);
+	free(copia);
 }
 
 void f_stat(int clientConnected){

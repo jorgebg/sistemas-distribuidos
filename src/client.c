@@ -61,9 +61,15 @@ void f_swap(char *src, char *dst){
 	// Write code here
 	servicio = 2;
 
+	//Le envia el tipo de servicio que es
+	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
+		perror("No se puede enviar el servicio de swap");
+	}
+
+	//Obtiene los datos del fichero
     FILE *archivo;
     char caracteres[10];
-	printf("SWAP <SRC=%s> <DST=%s>\n", src, dst);
+
     archivo = fopen(src,"r");
     if(archivo == NULL)
 		exit(1);
@@ -87,12 +93,6 @@ void f_swap(char *src, char *dst){
 	printf("%s \n",copia);
 	free(resultado);
     fclose(archivo);
-
-
-	//Le envia el tipo de servicio que es
-	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
-		perror("No se puede enviar el servicio de swap");
-	}
 
 	//Le envia la longitud del texto
 	int longitud = strlen(copia);
@@ -131,6 +131,55 @@ void f_hash(char *src){
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de hash");
 	}
+
+	//Obtiene los datos del fichero
+    FILE *archivo;
+    char caracteres[10];
+
+    archivo = fopen(src,"r");
+    if(archivo == NULL)
+		exit(1);
+
+    int total = 0;
+    printf("\nEl contenido del archivo de prueba es \n\n");
+    char* copia = calloc(total, sizeof(char));
+    char* resultado;
+    while (fgets(caracteres,10,archivo) != NULL)
+    {
+    	total = total + 10;
+		resultado = calloc(total, sizeof(char));
+
+		printf("%s \n",caracteres);
+
+		strcpy(resultado, copia);
+		strcat(resultado, caracteres);
+		copia = calloc(total, sizeof(char));
+		strcpy(copia, resultado);
+    }
+	printf("%s \n",copia);
+	free(resultado);
+    fclose(archivo);
+
+	//Le envia la longitud del texto
+	int longitud = strlen(copia);
+
+	if(write(serverConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+
+	//Le envia una cadena
+	if(write(serverConnected, copia, longitud) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+
+	//Recibe el valor de hash
+	unsigned int hash;
+	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de hash");
+	}
+	printf("%u \n", hash);
+
+	free(copia);
 }
 
 void f_check(char *src, int hash){
@@ -143,6 +192,65 @@ void f_check(char *src, int hash){
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de check");
 	}
+
+	//Obtiene los datos del fichero
+    FILE *archivo;
+    char caracteres[10];
+
+    archivo = fopen(src,"r");
+    if(archivo == NULL)
+		exit(1);
+
+    int total = 0;
+    printf("\nEl contenido del archivo de prueba es \n\n");
+    char* copia = calloc(total, sizeof(char));
+    char* resultado;
+    while (fgets(caracteres,10,archivo) != NULL)
+    {
+    	total = total + 10;
+		resultado = calloc(total, sizeof(char));
+
+		printf("%s \n",caracteres);
+
+		strcpy(resultado, copia);
+		strcat(resultado, caracteres);
+		copia = calloc(total, sizeof(char));
+		strcpy(copia, resultado);
+    }
+	printf("%s \n",copia);
+	free(resultado);
+    fclose(archivo);
+
+	//Le envia la longitud del texto
+	int longitud = strlen(copia);
+
+	if(write(serverConnected, &longitud, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+
+	//Le envia una cadena
+	if(write(serverConnected, copia, longitud) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+
+	//Le envia el valor hash
+	unsigned int uhash = hash;
+	if(write(serverConnected, &uhash, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de hash");
+	}
+
+	//Recibe si es correcto o falso la funcion resumen
+	int correcto;
+	if(read(serverConnected, &correcto, sizeof(int)) < 0){
+		perror("No se puede enviar el servicio de hash");
+	}
+
+	if(correcto == 0)
+		printf("FAIL \n");
+	else
+		printf("OK \n");
+
+
 }
 
 void f_stat(){
