@@ -74,6 +74,7 @@ int crearConexion(int port){
 
 int crearPeticion(int *client){
 	int clientConnected = *client, servicio;
+	unsigned int ping = 0, swap = 0, hash = 0, check = 0, stat = 0;
 
 	while(1){
 		//Recibe el numero de servicio
@@ -84,14 +85,19 @@ int crearPeticion(int *client){
 		//Eleccion de servicio
 		if(servicio == 1){
 			f_ping(clientConnected);
+			ping++;
 		}else if(servicio == 2){
 			f_swap(clientConnected);
+			swap++;
 		}else if(servicio == 3){
 			f_hash(clientConnected);
+			hash++;
 		}else if(servicio == 4){
 			f_check(clientConnected);
+			check++;
 		}else if(servicio == 5){
-			f_stat(clientConnected);
+			f_stat(clientConnected, ping, swap, hash, check, stat);
+			stat++;
 		}else if(servicio == 6){
 			return 1;
 		}
@@ -144,7 +150,7 @@ void f_swap(int clientConnected){
 	if(write(clientConnected, &letrasCambiadas, sizeof(int)) < 0){
 		perror("No se puede enviar el servicio de swap");
 	}
-	printf("%i \n",letrasCambiadas);
+	printf(" : swap = %i \n",letrasCambiadas);
 
 	//Envia la nueva copia
 	if(write(clientConnected, copia, longitud) < 0){
@@ -184,7 +190,7 @@ void f_hash(int clientConnected){
 	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
 		perror("No se puede enviar el servicio de hash");
 	}
-	printf("%u \n",hash);
+	printf(" : hash = %u \n",hash);
 
 	free(copia);
 }
@@ -224,19 +230,48 @@ void f_check(int clientConnected){
 
 	//Comprueba si es correcta
 	int correcto = 0;
-	if(hash == uhash)
+	if(hash == uhash){
 		correcto = 1;
+		printf(": check = OK \n");
+	}else
+		printf(": check = FAIL \n");
 
 	if(write(clientConnected, &correcto, sizeof(int)) < 0){
 		perror("No se puede enviar el servicio de check");
 	}
-	printf("%u \n",correcto);
+
 	free(copia);
 }
 
-void f_stat(int clientConnected){
+void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned int hash,
+		unsigned int check, unsigned int stat){
 	// Write code here
 	fprintf(stderr, "s> stat\n");
+
+	//Envia ping
+	if(write(clientConnected, &ping, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de stat");
+	}
+
+	//Envia swap
+	if(write(clientConnected, &swap, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de stat");
+	}
+
+	//Envia hash
+	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de stat");
+	}
+
+	//Envia check
+	if(write(clientConnected, &check, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de stat");
+	}
+
+	//Envia ping
+	if(write(clientConnected, &stat, sizeof(unsigned int)) < 0){
+		perror("No se puede enviar el servicio de stat");
+	}
 }
 
 

@@ -225,24 +225,24 @@ void f_check(char *src, int hash){
 	int longitud = strlen(copia);
 
 	if(write(serverConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de hash");
+		perror("No se puede enviar el servicio de check");
 	}
 
 	//Le envia una cadena
 	if(write(serverConnected, copia, longitud) < 0){
-		perror("No se puede enviar el servicio de hash");
+		perror("No se puede enviar el servicio de check");
 	}
 
 	//Le envia el valor hash
 	unsigned int uhash = hash;
 	if(write(serverConnected, &uhash, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de hash");
+		perror("No se puede enviar el servicio de check");
 	}
 
 	//Recibe si es correcto o falso la funcion resumen
 	int correcto;
 	if(read(serverConnected, &correcto, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de hash");
+		perror("No se puede recibir el servicio de check");
 	}
 
 	if(correcto == 0)
@@ -263,6 +263,42 @@ void f_stat(){
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de stat");
 	}
+
+	//Recibe el valor de ping
+	unsigned int ping;
+	if(read(serverConnected, &ping, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de stat");
+	}
+	printf("ping %u \n", ping);
+
+	//Recibe el valor de swap
+	unsigned int swap;
+	if(read(serverConnected, &swap, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de stat");
+	}
+	printf("swap %u \n", swap);
+
+	//Recibe el valor de hash
+	unsigned int hash;
+	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de stat");
+	}
+	printf("hash %u \n", hash);
+
+	//Recibe el valor de check
+	unsigned int check;
+	if(read(serverConnected, &check, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de stat");
+	}
+	printf("check %u \n", check);
+
+	//Recibe el valor de stat
+	unsigned int stat;
+	if(read(serverConnected, &stat, sizeof(unsigned int)) < 0){
+		perror("No se puede recibir el servicio de stat");
+	}
+	printf("stat %u \n", stat);
+
 }
 
 void quit(){
