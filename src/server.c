@@ -123,27 +123,30 @@ void f_ping(int clientConnected){
 	if(write(clientConnected, &ack, sizeof(char)) <0 ){
 		perror("No se puede enviar el servicio de ping");
 	}
+	fprintf(stderr, "\n");
 }
 
 void f_swap(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
-	int longitud;
-	if(read(clientConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede recibir el servicio de swap");
+	unsigned int longitud;
+	if(read(clientConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de swap: Longitud.");
 	}
 
 	//Se imprime por pantalla
-	fprintf(stderr, "%s:%i init swap %i\n", ip, port, longitud);
+	fprintf(stderr, "s>%s:%i init swap %u\n", ip, port, longitud);
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) < 0){
-		perror("No se puede recibir el servicio de swap");
+	if(read(clientConnected, copia, longitud) != longitud){
+		perror("No se puede recibir el servicio de swap: Cadena.");
 	}
 
 	//Intercambia los valores de la cadena
 	int i=0;
-	int letrasCambiadas = 0;
+	unsigned int letrasCambiadas = 0;
+
+	printf("Printf %i \n", i);
 	for(i=0; i< longitud; i++){
 		if(copia[i] >= 'A' && copia[i] <= 'Z') {
 			copia[i] = copia[i] + 32;    /* resta a c el valor ascii de A */
@@ -155,35 +158,35 @@ void f_swap(int clientConnected, char* ip, int port){
 	}
 
 	//Envia la cantidad de letras cambiadas
-	if(write(clientConnected, &letrasCambiadas, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de swap");
+	if(write(clientConnected, &letrasCambiadas, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de swap: LetrasCambiadas.");
 	}
 
-	//Envia la nueva copia
-	if(write(clientConnected, copia, longitud) < 0){
-		perror("No se puede enviar el servicio de swap");
+	//Envia la nueva copia de la cadena
+	if(write(clientConnected, copia, longitud) != longitud){
+		perror("No se puede enviar el servicio de swap: Cadena.");
 	}
 
 	//Se imprime por pantalla
-	fprintf(stderr, "s> %s:%i swap = %i\n", ip, port, letrasCambiadas);
-
+	fprintf(stderr, "s> %s:%i swap = %u\n", ip, port, letrasCambiadas);
+	fprintf(stderr, "\n");
 	free(copia);
 }
 
 void f_hash(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
-	int longitud;
-	if(read(clientConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede recibir el servicio de hash");
+	unsigned int longitud;
+	if(read(clientConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de hash: Longitud.");
 	}
 
 	//Se imprime por pantalla
-	fprintf(stderr, "%s> s:%i init hash %i\n", ip, port, longitud);
+	fprintf(stderr, "%s> s:%i init hash %u\n", ip, port, longitud);
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) < 0){
-		perror("No se puede recibir el servicio de hash");
+	if(read(clientConnected, copia, longitud) != longitud){
+		perror("No se puede recibir el servicio de hash: Cadena.");
 	}
 
 	//Obtiene la funcion hash
@@ -194,33 +197,34 @@ void f_hash(int clientConnected, char* ip, int port){
 	}
 
 	//Envia el hash
-	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de hash");
+	if(write(clientConnected, &hash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de hash: Hash.");
 	}
 
 	//Se imprime por pantalla
 	fprintf(stderr, "s> %s:%i hash = %u\n", ip, port, hash);
+	fprintf(stderr, "\n");
 
 	free(copia);
 }
 
 void f_check(int clientConnected, char* ip, int port){
 	//Recibe la longitud del texto
-	int longitud;
-	if(read(clientConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede recibir el servicio de check");
+	unsigned int longitud;
+	if(read(clientConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de check: Longitud.");
 	}
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) < 0){
-		perror("No se puede recibir el servicio de check");
+	if(read(clientConnected, copia, longitud) != longitud){
+		perror("No se puede recibir el servicio de check: Cadena.");
 	}
 
 	//Recibe el valor hash
 	unsigned int hash = 0;
-	if(read(clientConnected, &hash, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de check");
+	if(read(clientConnected, &hash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de check: Hash.");
 	}
 
 	//Se imprime por pantalla
@@ -234,48 +238,58 @@ void f_check(int clientConnected, char* ip, int port){
 	}
 
 	//Comprueba si es correcta
-	int correcto = 0;
+	char correcto = 0;
 	if(hash == uhash)
 		correcto = 1;
 
-	if(write(clientConnected, &correcto, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de check");
+	if(write(clientConnected, &correcto, sizeof(char)) != sizeof(char)){
+		perror("No se puede enviar el servicio de check: Correcto.");
 	}
 
 	//Se imprime por pantalla
 	if(correcto == 1)
-		fprintf(stderr, "%s> s:%i check = OK\n", ip, port);
+		fprintf(stderr, "s> %s:%i check = OK\n", ip, port);
 	else
-		fprintf(stderr, "%s> s:%i check = FAIL\n", ip, port);
+		fprintf(stderr, "s> %s:%i check = FAIL\n", ip, port);
+
+	//Se imprime por pantalla
+	fprintf(stderr, "\n");
+
 	free(copia);
 }
 
 void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned int hash,
 		unsigned int check, unsigned int stat){
 	//Envia ping
-	if(write(clientConnected, &ping, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de stat");
+	if(write(clientConnected, &ping, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de stat: Ping.");
+		exit(-1);
 	}
 
 	//Envia swap
-	if(write(clientConnected, &swap, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de stat");
+	if(write(clientConnected, &swap, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de stat: Swap.");
+		exit(-1);
 	}
 
 	//Envia hash
-	if(write(clientConnected, &hash, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de stat");
+	if(write(clientConnected, &hash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de stat: Hash.");
+		exit(-1);
 	}
 
 	//Envia check
-	if(write(clientConnected, &check, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de stat");
+	if(write(clientConnected, &check, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de stat: Check.");
+		exit(-1);
 	}
 
-	//Envia ping
-	if(write(clientConnected, &stat, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de stat");
+	//Envia stat
+	if(write(clientConnected, &stat, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de stat: Stat.");
+		exit(-1);
 	}
+	fprintf(stderr, "\n");
 }
 
 
@@ -322,7 +336,6 @@ int main(int argc, char *argv[]) {
 	
 	/*
 	 *  EMPIEZA EL CODIGO PROPIO
-	 *  NO SE SI HAY QUE USAR STDERR O STDOUT. Realmente no piden salida, se puede usar printf.
 	 **/
 
 	//Crear configuracion inicial
@@ -360,8 +373,6 @@ int main(int argc, char *argv[]) {
 			perror("Error al crear el hilo");
 			exit(-1);
 		}
-
-
 	}
 	//Cierra la conexion
 	close(clientConnected);
