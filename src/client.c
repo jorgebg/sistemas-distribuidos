@@ -21,6 +21,15 @@
  *
  * */
 
+/**
+ * Funciones
+ * */
+
+void recibir(int serverConnected, char* copia, unsigned int longitud);
+
+/**
+ * Atributos Globales:
+ * */
 
 int debug = 0;
 int serverConnected;
@@ -100,12 +109,14 @@ void f_swap(char *src, char *dst){
 	unsigned int longitud = strlen(copia);
 	if(write(serverConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
 		perror("No se puede enviar el servicio de swap: Longitud.");
+		fprintf(stderr, "Error: %u", longitud);
 		exit(-1);
 	}
 
 	//Le envia un cadena
 	if(write(serverConnected, copia, longitud) != longitud){
-		perror("No se puede enviar el servicio de swap: Cadena.");
+		perror("No se puede enviar el servicio de swap: Cadena");
+		fprintf(stderr, "Error: %s", copia);
 		exit(-1);
 	}
 
@@ -113,14 +124,14 @@ void f_swap(char *src, char *dst){
 	unsigned int letrasCambiadas = 0;
 	if(read(serverConnected, &letrasCambiadas, sizeof(unsigned int)) != sizeof(unsigned int)){
 		perror("No se puede recibir el servicio de swap: LetrasCambiadas");
+		fprintf(stderr, "Error: %u", letrasCambiadas);
 		exit(-1);
 	}
 
 	//Recibe la nueva cadena
-	if(read(serverConnected, copia, longitud) != longitud){
-		perror("No se puede recibir el servicio de swap: Cadena.");
-		exit(-1);
-	}
+	free(copia);
+	copia = calloc(longitud, sizeof(char));
+	recibir(serverConnected,copia, longitud);
 
 	//Se imprime por pantalla
 	fprintf(stderr, "%i\n", letrasCambiadas);
@@ -348,6 +359,20 @@ void quit(){
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de quit");
+	}
+}
+
+void recibir(int serverConnected, char* copia, unsigned int longitud){
+	//Envia la nueva copia de la cadena
+	int datosRestantes = longitud;
+	int enviado = 0;
+
+	while (datosRestantes != 0){
+		char* cadena = calloc(datosRestantes, sizeof(char));
+		enviado = read(serverConnected, cadena, datosRestantes);
+		datosRestantes = datosRestantes - enviado;
+		strcat(copia, cadena);
+		free(cadena);
 	}
 }
 

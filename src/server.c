@@ -30,6 +30,10 @@ typedef struct{
 	int descriptor;
 } conexion;
 
+/**
+ * Funciones
+ * */
+
 char* obtenerIpLocal();
 int crearConexion(int port);
 int crearPeticion(conexion *sock);
@@ -38,7 +42,7 @@ void f_swap();
 void f_hash();
 void f_check();
 void f_stat();
-
+void recibir(int clientConnected, char* copia, unsigned int longitud);
 
 
 /**
@@ -131,6 +135,8 @@ void f_swap(int clientConnected, char* ip, int port){
 	unsigned int longitud;
 	if(read(clientConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
 		perror("No se puede recibir el servicio de swap: Longitud.");
+		fprintf(stderr, "Error: %u", longitud);
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -138,9 +144,7 @@ void f_swap(int clientConnected, char* ip, int port){
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) != longitud){
-		perror("No se puede recibir el servicio de swap: Cadena.");
-	}
+	recibir(clientConnected,copia, longitud);
 
 	//Intercambia los valores de la cadena
 	int i=0;
@@ -159,12 +163,16 @@ void f_swap(int clientConnected, char* ip, int port){
 
 	//Envia la cantidad de letras cambiadas
 	if(write(clientConnected, &letrasCambiadas, sizeof(unsigned int)) != sizeof(unsigned int)){
-		perror("No se puede enviar el servicio de swap: LetrasCambiadas.");
+		perror("No se puede enviar el servicio de swap: LetrasCambiadas");
+		fprintf(stderr, "Error: %u", letrasCambiadas);
+		exit(-1);
 	}
 
 	//Envia la nueva copia de la cadena
 	if(write(clientConnected, copia, longitud) != longitud){
-		perror("No se puede enviar el servicio de swap: Cadena.");
+		perror("No se puede enviar el servicio de swap: Cadena");
+		fprintf(stderr, "Error: %s", copia);
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -185,9 +193,7 @@ void f_hash(int clientConnected, char* ip, int port){
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) != longitud){
-		perror("No se puede recibir el servicio de hash: Cadena.");
-	}
+	recibir(clientConnected,copia, longitud);
 
 	//Obtiene la funcion hash
 	int i=0;
@@ -217,9 +223,7 @@ void f_check(int clientConnected, char* ip, int port){
 
 	//Recibe la cadena
 	char* copia = calloc(longitud, sizeof(char));
-	if(read(clientConnected, copia, longitud) != longitud){
-		perror("No se puede recibir el servicio de check: Cadena.");
-	}
+	recibir(clientConnected,copia, longitud);
 
 	//Recibe el valor hash
 	unsigned int hash = 0;
@@ -291,6 +295,21 @@ void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned 
 	}
 	fprintf(stderr, "\n");
 }
+
+void recibir(int clientConnected, char* copia, unsigned int longitud){
+	//Envia la nueva copia de la cadena
+	int datosRestantes = longitud;
+	int enviado = 0;
+
+	while (datosRestantes != 0){
+		char* cadena = calloc(datosRestantes, sizeof(char));
+		enviado = read(clientConnected, cadena, datosRestantes);
+		datosRestantes = datosRestantes - enviado;
+		strcat(copia, cadena);
+		free(cadena);
+	}
+}
+
 
 
 void usage(char *program_name) {
