@@ -34,7 +34,7 @@ typedef struct{
  * Funciones
  * */
 
-char* obtenerIpLocal();
+void obtenerIpLocal(char* ip);
 int crearConexion(int port);
 int crearPeticion(conexion *sock);
 void f_ping();
@@ -51,24 +51,29 @@ void recibir(int clientConnected, char* copia, unsigned int longitud);
 
 int debug = 0;
 
-
-char* obtenerIpLocal() {
+//Obtiene la ip local
+void obtenerIpLocal(char* ip) {
 	struct sockaddr_in host;
 	char hostname[255];
 
 	gethostname(hostname, 255);
 	host.sin_addr = * (struct in_addr*) gethostbyname(hostname)->h_addr;
-	return inet_ntoa(host.sin_addr);
+	ip = inet_ntoa(host.sin_addr);
 
 }
 
+
+//Crea la conexion
 int crearConexion(int port){
 	struct sockaddr_in server;
+
+	//Se crea el socket
 	int descriptorSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if(descriptorSocket < 0){
 		perror("Error creando socket");
 	}
 
+	//Se da los atributos del servidor
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 	server.sin_addr.s_addr = INADDR_ANY;
@@ -150,7 +155,6 @@ void f_swap(int clientConnected, char* ip, int port){
 	int i=0;
 	unsigned int letrasCambiadas = 0;
 
-	printf("Printf %i \n", i);
 	for(i=0; i< longitud; i++){
 		if(copia[i] >= 'A' && copia[i] <= 'Z') {
 			copia[i] = copia[i] + 32;    /* resta a c el valor ascii de A */
@@ -358,7 +362,8 @@ int main(int argc, char *argv[]) {
 	 **/
 
 	//Crear configuracion inicial
-	char* ip = obtenerIpLocal();
+	char* ip = calloc(16, sizeof(char));
+	obtenerIpLocal(ip);
 	int size, socket = crearConexion(atoi(argv[2]));
 	fprintf(stderr, "s> init server %s:%s \n", ip, argv[2]);
 
