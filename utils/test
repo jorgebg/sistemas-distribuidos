@@ -1,0 +1,51 @@
+#/bin/bash
+
+SERVER="../bin/server"
+CLIENT="../bin/client"
+PORT=$(($RANDOM+1024))
+WORKSPACE="../test"
+CLIENT_FILE="$WORKSPACE/file"
+CLIENT_FILE_SWAP="$WORKSPACE/file.swap"
+CLIENT_FILE_URL="http://en.wikipedia.org/wiki/Distributed_computing"
+CLIENT_INPUT="$WORKSPACE/client.in"
+CLIENT_OUTPUT="$WORKSPACE/client.out"
+SERVER_OUTPUT="$WORKSPACE/server.out"
+
+#Preparamos el workspace
+mkdir -p $WORKSPACE
+rm $WORKSPACE/*
+
+#Descargamos un fichero de ejemplo
+curl $CLIENT_FILE_URL -o $CLIENT_FILE
+
+#Iniciamos el servidor
+$SERVER -p $PORT &> $SERVER_OUTPUT &
+
+# Usamos una fifo para cada cliente
+for n in {1..5}
+do
+	mkfifo $CLIENT_INPUT.$n
+    tail -f $CLIENT_INPUT.$n | $CLIENT -s 0.0.0.0 -p $PORT  &> $CLIENT_OUTPUT.$n &
+done
+
+# Obtenemos el hash del documento con el primer cliente para comprobar las ejecuciones de check
+echo "hash $CLIENT_FILE" > $CLIENT_INPUT.1 &
+hash=`tail -n 1 $CLIENT_OUTPUT.1`
+
+# Probamos los servicios.
+commands=("ping" "swap $CLIENT_FILE $CLIENT_FILE_SWAP" "hash $CLIENT_FILE" "check $CLIENT_FILE 222" "check $CLIENT_FILE $hash" "stat" )
+for command in "${commands[@]}"
+do
+	for n in {1..5}
+	do
+		echo "$command" > $CLIENT_INPUT.$n &
+	done
+done
+
+# Limpiamos las fifos
+rm $CLIENT_INPUT*
+exit
+
+
+
+

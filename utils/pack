@@ -1,0 +1,18 @@
+#!/bin/sh
+
+FILENAME="ssdd_p1_100072936_100077162"
+BASEFOLDER="/tmp"
+FOLDER="$BASEFOLDER/$FILENAME/"
+
+mkdir -p $FOLDER
+cp ../src/client.c $FOLDER
+cp ../src/server.c $FOLDER
+cp ../doc/memoria.pdf $FOLDER
+cp ../doc/autores.txt $FOLDER
+
+cd $BASEFOLDER
+rm $FILENAME.zip
+zip -r $FILENAME.zip $FILENAME
+
+rm -rf $FILENAME
+

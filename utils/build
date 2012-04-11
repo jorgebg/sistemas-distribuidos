@@ -1,0 +1,4 @@
+#!/bin/sh
+
+gcc -Wall -g -O0 -DDEBUG ../src/client.c -o client -lrt -lpthread
+gcc -Wall -g -O0 -DDEBUG ../src/server.c -o server -lrt -lpthread
