@@ -28,7 +28,7 @@
  * */
 
 void recibir(int serverConnected, char* copia, unsigned int longitud);
-void obtenerIpServer(char* ip, char* server);
+char* obtenerIpServer(char* server);
 
 /**
  * Atributos Globales:
@@ -381,12 +381,11 @@ void recibir(int serverConnected, char* copia, unsigned int longitud){
 }
 
 //Obtiene la ip a traves de su hostname
-void obtenerIpServer(char* ip, char* server) {
+char* obtenerIpServer(char* server) {
 	struct sockaddr_in host;
 
 	host.sin_addr = * (struct in_addr*) gethostbyname(server)->h_addr;
-	ip = inet_ntoa(host.sin_addr);
-
+	return inet_ntoa(host.sin_addr);
 }
 
 void shell() {
@@ -513,13 +512,13 @@ int main(int argc, char *argv[]){
 
 	//Comprueba si se puede conectar
 	if(connect(serverConnected, (struct sockaddr *) &serverIn, sizeof(serverIn)) <0){
-		char* ip = calloc(16, sizeof(char));
-		obtenerIpServer(ip, server);
+		char* ip = obtenerIpServer(server);
 		serverIn.sin_addr.s_addr = inet_addr(ip);
 		if(connect(serverConnected, (struct sockaddr *) &serverIn, sizeof(serverIn)) <0){
 			fprintf(stderr, "Error en la conexion con el servidor %s:%i", server, port);
 			exit(-1);
-		}
+		}else
+			shell();
 	}else
 		shell();
 

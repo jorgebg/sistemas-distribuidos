@@ -34,7 +34,7 @@ typedef struct{
  * Funciones
  * */
 
-void obtenerIpLocal(char* ip);
+char* obtenerIpLocal();
 int crearConexion(int port);
 int crearPeticion(conexion *sock);
 void f_ping();
@@ -52,13 +52,13 @@ void recibir(int clientConnected, char* copia, unsigned int longitud);
 int debug = 0;
 
 //Obtiene la ip local
-void obtenerIpLocal(char* ip) {
+char* obtenerIpLocal() {
 	struct sockaddr_in host;
 	char hostname[255];
 
 	gethostname(hostname, 255);
 	host.sin_addr = * (struct in_addr*) gethostbyname(hostname)->h_addr;
-	ip = inet_ntoa(host.sin_addr);
+	return inet_ntoa(host.sin_addr);
 
 }
 
@@ -99,6 +99,7 @@ int crearPeticion(conexion *hijo){
 		//Recibe el numero de servicio
 		if(read(clientConnected, &servicio, sizeof(int)) < 1){
 			perror("Error recibiendo el servicio");
+			exit(-1);
 		}
 
 		//Eleccion de servicio
@@ -120,6 +121,7 @@ int crearPeticion(conexion *hijo){
 			fprintf(stderr, "s> %s:%i init stat\n", ip, port);
 			f_stat(clientConnected, ping, swap, hash, check, stat);
 			fprintf(stderr, "s> %s:%i stat = %u %u %u %u %u\n", ip, port, ping, swap, hash, check, stat);
+			fprintf(stderr, "\n");
 			stat++;
 		}else if(servicio == 6){
 			return 1;
@@ -297,7 +299,6 @@ void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned 
 		perror("No se puede enviar el servicio de stat: Stat.");
 		exit(-1);
 	}
-	fprintf(stderr, "\n");
 }
 
 void recibir(int clientConnected, char* copia, unsigned int longitud){
@@ -362,8 +363,7 @@ int main(int argc, char *argv[]) {
 	 **/
 
 	//Crear configuracion inicial
-	char* ip = calloc(16, sizeof(char));
-	obtenerIpLocal(ip);
+	char* ip = obtenerIpLocal();
 	int size, socket = crearConexion(atoi(argv[2]));
 	fprintf(stderr, "s> init server %s:%s \n", ip, argv[2]);
 
