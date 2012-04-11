@@ -51,7 +51,7 @@ void recibir(int clientConnected, char* copia, unsigned int longitud);
 
 int debug = 0;
 
-
+//Obtiene la ip local
 char* obtenerIpLocal() {
 	struct sockaddr_in host;
 	char hostname[255];
@@ -62,13 +62,18 @@ char* obtenerIpLocal() {
 
 }
 
+
+//Crea la conexion
 int crearConexion(int port){
 	struct sockaddr_in server;
+
+	//Se crea el socket
 	int descriptorSocket = socket(AF_INET, SOCK_STREAM, 0);
 	if(descriptorSocket < 0){
 		perror("Error creando socket");
 	}
 
+	//Se da los atributos del servidor
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 	server.sin_addr.s_addr = INADDR_ANY;
@@ -94,6 +99,7 @@ int crearPeticion(conexion *hijo){
 		//Recibe el numero de servicio
 		if(read(clientConnected, &servicio, sizeof(int)) < 1){
 			perror("Error recibiendo el servicio");
+			exit(-1);
 		}
 
 		//Eleccion de servicio
@@ -115,6 +121,7 @@ int crearPeticion(conexion *hijo){
 			fprintf(stderr, "s> %s:%i init stat\n", ip, port);
 			f_stat(clientConnected, ping, swap, hash, check, stat);
 			fprintf(stderr, "s> %s:%i stat = %u %u %u %u %u\n", ip, port, ping, swap, hash, check, stat);
+			fprintf(stderr, "\n");
 			stat++;
 		}else if(servicio == 6){
 			return 1;
@@ -150,7 +157,6 @@ void f_swap(int clientConnected, char* ip, int port){
 	int i=0;
 	unsigned int letrasCambiadas = 0;
 
-	printf("Printf %i \n", i);
 	for(i=0; i< longitud; i++){
 		if(copia[i] >= 'A' && copia[i] <= 'Z') {
 			copia[i] = copia[i] + 32;    /* resta a c el valor ascii de A */
@@ -293,7 +299,6 @@ void f_stat(int clientConnected, unsigned int ping, unsigned int swap, unsigned 
 		perror("No se puede enviar el servicio de stat: Stat.");
 		exit(-1);
 	}
-	fprintf(stderr, "\n");
 }
 
 void recibir(int clientConnected, char* copia, unsigned int longitud){
