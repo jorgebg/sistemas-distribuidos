@@ -21,6 +21,15 @@
  *
  * */
 
+/**
+ * Funciones
+ * */
+
+void recibir(int serverConnected, char* copia, unsigned int longitud);
+
+/**
+ * Atributos Globales:
+ * */
 
 int debug = 0;
 int serverConnected;
@@ -40,15 +49,20 @@ void f_ping(){
 
 	struct timespec ini, end;
 
+	//Tiempo
 	clock_gettime(CLOCK_REALTIME, &ini);
 
 	if(write(serverConnected, &servicio, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de ping");
+		perror("No se puede enviar el servicio de ping.");
+		exit(-1);
 	}
+
 	char ack;
 	if(read(serverConnected, &ack, sizeof(char)) < 0){
-		perror("Error recibiendo el servicio");
+		perror("No se puede recibir el servicio de ping.");
+		exit(-1);
 	}
+	//Tiempo
 	clock_gettime( CLOCK_REALTIME, &end);
 
     fprintf(stderr, "%f s\n", (float)(1.0*(1.0*end.tv_nsec - ini.tv_nsec*1.0)*1e-9 + 1.0*end.tv_sec - 1.0*ini.tv_sec));
@@ -64,6 +78,7 @@ void f_swap(char *src, char *dst){
 	//Le envia el tipo de servicio que es
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de swap");
+		exit(-1);
 	}
 
 	//Obtiene los datos del fichero
@@ -91,33 +106,38 @@ void f_swap(char *src, char *dst){
     fclose(archivo);
 
 	//Le envia la longitud del texto
-	int longitud = strlen(copia);
-
-	if(write(serverConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de swap");
+	unsigned int longitud = strlen(copia);
+	if(write(serverConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de swap: Longitud.");
+		fprintf(stderr, "Error: %u", longitud);
+		exit(-1);
 	}
 
 	//Le envia un cadena
-	if(write(serverConnected, copia, longitud) < 0){
-		perror("No se puede enviar el servicio de swap");
+	if(write(serverConnected, copia, longitud) != longitud){
+		perror("No se puede enviar el servicio de swap: Cadena");
+		fprintf(stderr, "Error: %s", copia);
+		exit(-1);
 	}
 
 	//Recibe la cantidad de letras cambiadas
-	int letrasCambiadas;
-	if(read(serverConnected, &letrasCambiadas, sizeof(int)) < 0){
-		perror("No se puede recibir el servicio de swap");
+	unsigned int letrasCambiadas = 0;
+	if(read(serverConnected, &letrasCambiadas, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de swap: LetrasCambiadas");
+		fprintf(stderr, "Error: %u", letrasCambiadas);
+		exit(-1);
 	}
 
 	//Recibe la nueva cadena
-	if(read(serverConnected, copia, longitud) < 0){
-		perror("No se puede recibir el servicio de swap");
-	}
+	free(copia);
+	copia = calloc(longitud, sizeof(char));
+	recibir(serverConnected,copia, longitud);
 
 	//Se imprime por pantalla
 	fprintf(stderr, "%i\n", letrasCambiadas);
 
 	//Graba los datos en un fichero
-    FILE *archivo2 = fopen(dst,"a+");
+    FILE *archivo2 = fopen(dst,"w");
     if(archivo2 == NULL)
 		exit(1);
 
@@ -137,6 +157,7 @@ void f_hash(char *src){
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de hash");
+		exit(-1);
 	}
 
 	//Obtiene los datos del fichero
@@ -165,22 +186,25 @@ void f_hash(char *src){
 	free(resultado);
     fclose(archivo);
 
-	//Le envia la longitud del texto
-	int longitud = strlen(copia);
+	//Le envia la longitud del fichero
+	unsigned int longitud = strlen(copia);
 
-	if(write(serverConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de hash");
+	if(write(serverConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de hash: Longitud");
+		exit(-1);
 	}
 
 	//Le envia una cadena
-	if(write(serverConnected, copia, longitud) < 0){
-		perror("No se puede enviar el servicio de hash");
+	if(write(serverConnected, copia, longitud) != longitud){
+		perror("No se puede enviar el servicio de hash: Cadena.");
+		exit(-1);
 	}
 
 	//Recibe el valor de hash
 	unsigned int hash = 0;
-	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de hash");
+	if(read(serverConnected, &hash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de hash: Hash.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -198,6 +222,7 @@ void f_check(char *src, int hash){
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de check");
+		exit(-1);
 	}
 
 	//Obtiene los datos del fichero
@@ -229,25 +254,29 @@ void f_check(char *src, int hash){
 	//Le envia la longitud del texto
 	int longitud = strlen(copia);
 
-	if(write(serverConnected, &longitud, sizeof(int)) < 0){
-		perror("No se puede enviar el servicio de check");
+	if(write(serverConnected, &longitud, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de check: Longitud.");
+		exit(-1);
 	}
 
 	//Le envia una cadena
-	if(write(serverConnected, copia, longitud) < 0){
-		perror("No se puede enviar el servicio de check");
+	if(write(serverConnected, copia, longitud) != longitud){
+		perror("No se puede enviar el servicio de check: Cadena.");
+		exit(-1);
 	}
 
 	//Le envia el valor hash
 	unsigned int uhash = hash;
-	if(write(serverConnected, &uhash, sizeof(unsigned int)) < 0){
-		perror("No se puede enviar el servicio de check");
+	if(write(serverConnected, &uhash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede enviar el servicio de check: Hash.");
+		exit(-1);
 	}
 
 	//Recibe si es correcto o falso la funcion resumen
-	int correcto;
-	if(read(serverConnected, &correcto, sizeof(int)) < 0){
-		perror("No se puede recibir el servicio de check");
+	char correcto;
+	if(read(serverConnected, &correcto, sizeof(char)) != sizeof(char)){
+		perror("No se puede recibir el servicio de check: Correcto.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -268,12 +297,14 @@ void f_stat(){
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de stat");
+		exit(-1);
 	}
 
 	//Recibe el valor de ping
 	unsigned int ping;
-	if(read(serverConnected, &ping, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de stat");
+	if(read(serverConnected, &ping, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de stat: Ping.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -281,8 +312,9 @@ void f_stat(){
 
 	//Recibe el valor de swap
 	unsigned int swap;
-	if(read(serverConnected, &swap, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de stat");
+	if(read(serverConnected, &swap, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de stat: Swap.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -290,8 +322,9 @@ void f_stat(){
 
 	//Recibe el valor de hash
 	unsigned int hash;
-	if(read(serverConnected, &hash, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de stat");
+	if(read(serverConnected, &hash, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de stat: Hash.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -299,8 +332,9 @@ void f_stat(){
 
 	//Recibe el valor de check
 	unsigned int check;
-	if(read(serverConnected, &check, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de stat");
+	if(read(serverConnected, &check, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de stat: Check.");
+		exit(-1);
 	}
 
 	//Se imprime por pantalla
@@ -308,8 +342,8 @@ void f_stat(){
 
 	//Recibe el valor de stat
 	unsigned int stat;
-	if(read(serverConnected, &stat, sizeof(unsigned int)) < 0){
-		perror("No se puede recibir el servicio de stat");
+	if(read(serverConnected, &stat, sizeof(unsigned int)) != sizeof(unsigned int)){
+		perror("No se puede recibir el servicio de stat: Stat.");
 	}
 
 	//Se imprime por pantalla
@@ -325,6 +359,20 @@ void quit(){
 
 	if(write(serverConnected, &servicio, sizeof(int)) <0 ){
 		perror("No se puede enviar el servicio de quit");
+	}
+}
+
+void recibir(int serverConnected, char* copia, unsigned int longitud){
+	//Envia la nueva copia de la cadena
+	int datosRestantes = longitud;
+	int enviado = 0;
+
+	while (datosRestantes != 0){
+		char* cadena = calloc(datosRestantes, sizeof(char));
+		enviado = read(serverConnected, cadena, datosRestantes);
+		datosRestantes = datosRestantes - enviado;
+		strcat(copia, cadena);
+		free(cadena);
 	}
 }
 
